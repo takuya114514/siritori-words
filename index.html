@@ -30,6 +30,51 @@
       margin-bottom: 20px;
     }
 
+    .category-switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      background-color: #f1f3f5;
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+    .category-option {
+      position: relative;
+    }
+
+    .category-option input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .category-option label {
+      display: inline-block;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #495057;
+      background-color: #ffffff;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .category-option label:hover {
+      border-color: #0066cc;
+    }
+
+    .category-option input[type="checkbox"]:checked + label {
+      background-color: #0066cc;
+      color: #ffffff;
+      border-color: #0066cc;
+      box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
+    }
+
     /* 検索ボックスエリア */
     .search-box {
       display: flex;
@@ -54,9 +99,14 @@
       width: 100%;
       padding: 12px;
       font-size: 16px;
-      border: 2px solid #0066cc;
+      border: 2px solid #ced4da;
       border-radius: 6px;
       outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-inputs input:focus {
+      border-color: #0066cc;
     }
 
     .search-info {
@@ -94,13 +144,29 @@
     }
 
     .word-card {
+      appearance: None;
+      -webkit-appearance: none;
       padding: 10px;
       background-color: #f9f9f9;
       border: 1px solid #eee;
       border-radius: 4px;
       font-size: 15px;
+      color: #333;
       word-break: break-all;
     }
+
+    .word-card label {
+      transition: all 0.2s ease;
+    }
+
+    .word-card:hover {
+      border-color: #0066cc;
+      transition: border-color 0.2s;
+    }
+
+    /* .word-card:active {
+      background-color: #dcecff;
+    } */
 
     .status-msg {
       color: #666;
@@ -114,16 +180,36 @@
 </head>
 
 <body>
-
   <div class="control-panel">
     <div class="search-box">
-      <label>検索（平仮名・キーワード入力）:</label>
+      <label>検索（ひらがな入力）:</label>
       <div class="search-inputs">
-        <input type="text" id="search-input-start" placeholder="頭: 「あ」「け」など..." oninput="handleSearch()" disabled>
-        <input type="text" id="search-input-end" placeholder="尻: 「す」「る」など..." oninput="handleSearch()" disabled>
+        <input type="text" id="search-input-start" placeholder="頭文字" oninput="handleSearch()" disabled>
+        <input type="text" id="search-input-end" placeholder="尻文字" oninput="handleSearch()" disabled>
       </div>
-      <div id="search-info" class="search-info">words.txt を読み込み中...</div>
+
+      <label>カテゴリ絞り込み（複数可）:</label>
+      <div class="category-switch">
+        <div class="category-option">
+          <input type="checkbox" id="cat-noun" class="cat-checkbox" value="noun" checked onchange="handleSearch()">
+          <label for="cat-noun">一般名詞</label>
+        </div>
+        <div class="category-option">
+          <input type="checkbox" id="cat-foreign" class="cat-checkbox" value="foreign" checked onchange="handleSearch()">
+          <label for="cat-foreign">外来語</label>
+        </div>
+        <div class="category-option">
+          <input type="checkbox" id="cat-proper" class="cat-checkbox" value="proper" checked onchange="handleSearch()">
+          <label for="cat-proper">固有名詞</label>
+        </div>
+        <div class="category-option">
+          <input type="checkbox" id="cat-verb" class="cat-checkbox" value="verb" onchange="handleSearch()">
+          <label for="cat-verb">動詞</label>
+        </div>
+      </div>
     </div>
+
+    <div id="search-info" class="search-info">words.txt を読み込み中...</div>
   </div>
 
   <div class="content-area">
@@ -133,146 +219,6 @@
     </div>
     <div id="word-display" class="status-msg">読み込み中...</div>
   </div>
-
-  <script>
-    // 50音マップ（子音グループ -> 母音 -> 対応文字）
-    const kanaMap = {
-      'あ行': { 'あ': 'あ', 'い': 'い', 'う': 'う', 'え': 'え', 'お': 'お' },
-      'か行': { 'か': 'かが', 'き': 'きぎ', 'く': 'くぐ', 'け': 'けげ', 'こ': 'こご' },
-      'さ行': { 'さ': 'さざ', 'し': 'しじ', 'す': 'すず', 'せ': 'せぜ', 'そ': 'そぞ' },
-      'た行': { 'た': 'ただ', 'ち': 'ちぢ', 'つ': 'つづっ', 'て': 'てで', 'と': 'とど' },
-      'な行': { 'な': 'な', 'に': 'に', 'ぬ': 'ぬ', 'ね': 'ね', 'の': 'の' },
-      'は行': { 'は': 'はばぱ', 'ひ': 'ひびぴ', 'ふ': 'ふぶぷ', 'へ': 'へべぺ', 'ほ': 'ほぼぽ' },
-      'ま行': { 'ま': 'ま', 'み': 'み', 'む': 'む', 'め': 'め', 'も': 'も' },
-      'や行': { 'や': 'やゃ', 'ゆ': 'ゆゅ', 'よ': 'よょ' },
-      'ら行': { 'ら': 'ら', 'り': 'り', 'る': 'る', 'れ': 'れ', 'ろ': 'ろ' },
-      'わ行': { 'わ': 'わゎ', 'を': 'を', 'ん': 'ん' }
-    };
-
-    let allWords = []; // 事前ソート済みの単語リスト
-
-    // 起動時に同一フォルダの words.txt を自動読み込み
-    async function loadWordsFile() {
-      const wordDisplay = document.getElementById('word-display');
-      const searchStart = document.getElementById('search-input-start');
-      const searchEnd = document.getElementById('search-input-end');
-      const searchInfo = document.getElementById('search-info');
-
-      try {
-        const response = await fetch('./words.txt');
-        if (!response.ok) throw new Error(`ファイルが見つかりません (HTTP ${response.status})`);
-
-        const text = await response.text();
-        const rawWords = text.split(/\r?\n/).map(w => w.trim()).filter(w => w.length > 0);
-
-        // 「ん」または「ン」で終わる単語を除外
-        const filteredByN = rawWords.filter(word => !(word.endsWith("ん") || word.endsWith("ン")));
-
-        // 重複ワードを除外し、日本語順（五十音順）に事前ソート
-        allWords = Array.from(new Set(filteredByN)).sort((a, b) => a.localeCompare(b, 'ja'));
-
-        const duplicateCount = filteredByN.length - allWords.length;
-
-        searchStart.disabled = false;
-        searchEnd.disabled = false;
-        searchInfo.textContent = `全 ${allWords.length} 件の単語を読み込みました（「ん」で終わる単語・重複${duplicateCount}件は除外済み）。`;
-
-        renderWords(allWords, 'すべてのワード');
-      } catch (err) {
-        wordDisplay.className = 'error-msg';
-        wordDisplay.textContent = `読み込みエラー: ${err.message}。index.html と同じフォルダに words.txt があるか確認してください。`;
-        searchInfo.textContent = '読み込みに失敗しました。';
-      }
-    }
-
-    // 入力された1文字に対応する同グループの文字一覧を取得するヘルパー
-    function getGroupChars(char) {
-      if (!char) return null;
-      for (const vowels of Object.values(kanaMap)) {
-        for (const chars of Object.values(vowels)) {
-          if (chars.includes(char)) {
-            return chars;
-          }
-        }
-      }
-      return char;
-    }
-
-    // 検索処理
-    function handleSearch() {
-      const startQuery = document.getElementById('search-input-start').value.trim();
-      const endQuery = document.getElementById('search-input-end').value.trim();
-      const searchInfo = document.getElementById('search-info');
-
-      if (!startQuery && !endQuery) {
-        searchInfo.textContent = `全 ${allWords.length} 件の単語`;
-        renderWords(allWords, 'すべてのワード');
-        return;
-      }
-
-      // 検索フィルタリング
-      const startGroup = startQuery ? getGroupChars(startQuery.charAt(0)) : null;
-      const endGroup = endQuery ? getGroupChars(endQuery.charAt(0)) : null;
-
-      const filtered = allWords.filter(word => {
-        let matchStart = true;
-        let matchEnd = true;
-
-        if (startGroup) {
-          const firstChar = word.charAt(0);
-          matchStart = startGroup.includes(firstChar);
-        }
-
-        if (endGroup) {
-          const lastChar = word.charAt(word.length - 1);
-          matchEnd = endGroup.includes(lastChar);
-        }
-
-        return matchStart && matchEnd;
-      });
-
-      // 表示テキストの構築
-      let labelParts = [];
-      if (startQuery) labelParts.push(`頭: 「${startQuery}」`);
-      if (endQuery) labelParts.push(`尻: 「${endQuery}」`);
-
-      searchInfo.textContent = `${labelParts.join(' / ')} で検索中`;
-      renderWords(filtered, `${labelParts.join('・')} のワード`);
-    }
-
-    // メイン画面へのワード表示
-    function renderWords(words, title) {
-      const titleEl = document.getElementById('current-title');
-      const countEl = document.getElementById('word-count');
-      const displayEl = document.getElementById('word-display');
-
-      titleEl.textContent = title;
-      countEl.textContent = `${words.length}件`;
-      displayEl.className = '';
-      displayEl.innerHTML = '';
-
-      if (words.length === 0) {
-        displayEl.className = 'status-msg';
-        displayEl.textContent = '該当するワードが見つかりませんでした。';
-        return;
-      }
-
-      const grid = document.createElement('div');
-      grid.className = 'word-grid';
-
-      words.forEach(word => {
-        const card = document.createElement('div');
-        card.className = 'word-card';
-        card.textContent = word;
-        grid.appendChild(card);
-      });
-
-      displayEl.appendChild(grid);
-    }
-
-    // 画面が開いた時に実行
-    window.onload = loadWordsFile;
-  </script>
+  <script src="main.js"></script>
 </body>
-
 </html>
